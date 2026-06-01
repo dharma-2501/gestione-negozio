@@ -8,16 +8,14 @@
   "scripts": {
     "format": "prettier --write .",
     "lint": "eslint --cache .",
-    "start": "electron-forge start",
     "dev": "electron-vite dev",
     "build": "electron-vite build",
+    "rebuild:native": "electron-rebuild -f -w better-sqlite3",
     "postinstall": "electron-builder install-app-deps",
-    "build:unpack": "npm run build && electron-builder --dir",
-    "build:win": "npm run build && electron-builder --win",
-    "build:mac": "npm run build && electron-builder --mac",
-    "build:linux": "npm run build && electron-builder --linux",
-    "package": "electron-forge package",
-    "make": "electron-forge make"
+    "build:unpack": "npm run build && npm run rebuild:native && electron-builder --dir",
+    "build:win": "npm run build && npm run rebuild:native && electron-builder --win",
+    "build:mac": "npm run build && npm run rebuild:native && electron-builder --mac",
+    "build:linux": "npm run build && npm run rebuild:native && electron-builder --linux"
   },
   "dependencies": {
     "@electron-toolkit/preload": "^3.0.2",
@@ -32,15 +30,9 @@
     "zustand": "^5.0.13"
   },
   "devDependencies": {
-    "@electron-forge/cli": "^7.11.2",
-    "@electron-forge/maker-deb": "^7.11.2",
-    "@electron-forge/maker-dmg": "^7.11.2",
-    "@electron-forge/maker-squirrel": "^7.11.2",
-    "@electron-forge/maker-zip": "^7.11.2",
-    "@electron-forge/plugin-auto-unpack-natives": "^7.11.2",
+    "@electron/rebuild": "^4.0.4",
     "@electron-toolkit/eslint-config": "^2.1.0",
     "@electron-toolkit/eslint-config-prettier": "^3.0.0",
-    "@electron/rebuild": "^4.0.4",
     "@vitejs/plugin-react": "^5.1.1",
     "autoprefixer": "^10.5.0",
     "electron": "^39.2.6",
@@ -56,5 +48,22 @@
     "react-dom": "^19.2.1",
     "tailwindcss": "^3.4.19",
     "vite": "^7.2.6"
+  },
+"build": {
+  "appId": "com.drgreen.gestionenegozio",
+  "productName": "gestione-negozio",
+  "directories": {
+    "buildResources": "build"
+  },
+  "win": {
+    "target": "nsis",
+    "icon": "build/icon.ico"
+  },
+  "mac": {
+    "icon": "build/icon.icns"
+  },
+  "linux": {
+    "icon": "build/icon.png"
   }
+}
 }
