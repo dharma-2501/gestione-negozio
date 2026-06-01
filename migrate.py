@@ -2,13 +2,34 @@
 # MIGRAZIONE VECCHIO → NUOVO DATABASE
 # Primi 6 caratteri di "description" diventano categoria
 # ============================
-
 import sqlite3
+import os
+import sys
 from datetime import datetime
 
+
 # ==================== CONFIGURA I PERCORSI ====================
-OLD_DB_PATH = "/Users/drgreen/Downloads/wh.db"          # ← Cambia con il percorso del tuo vecchio database
-NEW_DB_PATH = "/Users/drgreen/Library/Application Support/gestione-negozio/negozio.db"  # ← Il tuo database attuale
+OLD_DB_PATH = "/Users/drgreen/Workspace/gestione-negozio/wh.db"
+NEW_DB_PATH = "/Users/drgreen/Library/Application Support/gestione-negozio/negozio.db"
+
+print(f"OLD_DB_PATH: {OLD_DB_PATH}")
+print(f"NEW_DB_PATH: {NEW_DB_PATH}")
+
+if not os.path.exists(OLD_DB_PATH):
+    print("❌ Il file del vecchio database non esiste.")
+    sys.exit(1)
+
+if not os.path.isfile(OLD_DB_PATH):
+    print("❌ Il percorso del vecchio database non è un file valido.")
+    sys.exit(1)
+
+if not os.access(OLD_DB_PATH, os.R_OK):
+    print("❌ Il file del vecchio database esiste ma non è leggibile.")
+    sys.exit(1)
+
+print("✅ Il file del vecchio database esiste ed è leggibile.")
+print("🚀 Inizio migrazione dal vecchio database...")
+
 
 print("🚀 Inizio migrazione dal vecchio database...")
 
