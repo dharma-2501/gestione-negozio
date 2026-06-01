@@ -4,6 +4,8 @@ import {
   LayoutDashboard, Package, ShoppingCart, Users, 
   Ticket, BarChart3, Settings 
 } from 'lucide-react';
+import icon from '../img/icon.png';
+
 
 export default function Layout() {
   return (
@@ -12,7 +14,10 @@ export default function Layout() {
       <div className="w-64 bg-white border-r shadow-sm flex flex-col">
         <div className="p-6 border-b">
           <h1 className="text-2xl font-bold flex items-center gap-2">
-            🛒 Negozio
+            <div className="rounded-full border-2 border-gray-300 p-1 overflow-hidden">
+                  <img src={icon} alt="Logo" className="w-16 h-16 rounded-full object-cover " />
+            </div>              
+            <h2>Shop</h2>
           </h1>
         </div>
 
@@ -79,13 +84,7 @@ export default function Layout() {
         </nav>
 
         <div className="p-4 border-t">
-          <NavLink
-            to="/impostazioni"
-            className="w-full flex items-center justify-center gap-2 text-gray-500 hover:text-gray-700 py-2"
-          >
-            <Settings className="w-4 h-4" />
-            Impostazioni
-          </NavLink>
+          Created by Enrico Giusto
         </div>
       </div>
 
