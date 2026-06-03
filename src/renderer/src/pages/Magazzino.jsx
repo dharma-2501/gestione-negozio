@@ -19,8 +19,9 @@ export default function Magazzino() {
 
   const { categories, fetchCategories, addCategory, deleteCategory, updateCategory } = useCategoriesStore();
 
-  const [searchTerm, setSearchTerm] = useState('');
-  const [barcodeSearch, setBarcodeSearch] = useState('');
+const [searchTerm, setSearchTerm] = useState('');
+const [barcodeSearch, setBarcodeSearch] = useState('');
+const [appliedBarcodeFilter, setAppliedBarcodeFilter] = useState('') 
 
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
@@ -43,25 +44,46 @@ export default function Magazzino() {
     fetchCategories();
   }, []);
 
-  const filteredProducts = products.filter(p =>
-    p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (p.barcode && p.barcode.toLowerCase().includes(searchTerm.toLowerCase()))
-  );
+ 
 
-  const handleBarcodeSearch = () => {
-    if (!barcodeSearch.trim()) return;
-    const found = products.find(p => p.barcode === barcodeSearch.trim());
-    if (found) openStockModal(found);
-    else {
-      setNewProduct({ name: '', price: '', purchasePrice: '', category: '', barcode: barcodeSearch.trim(), min_stock: 1 });
-      setShowAddModal(true);
-    }
-    setBarcodeSearch('');
-  };
+const normalizeBarcode = (value) =>
+  String(value ?? '')
+    .replace(/[\r\n\t]/g, '')
+    .replace(/\s+/g, '')
+    .trim();
 
-  const handleKeyDown = (event) => {
-    if (event.key === 'Enter') handleBarcodeSearch();
-  };
+const filteredProducts = products.filter((p) => {
+  const term = searchTerm.toLowerCase().trim();
+
+  const matchesText =
+    (p.name || '').toLowerCase().includes(term) ||
+    normalizeBarcode(p.barcode).includes(normalizeBarcode(term));
+
+  const matchesBarcodeFilter =
+    !appliedBarcodeFilter ||
+    normalizeBarcode(p.barcode) === normalizeBarcode(appliedBarcodeFilter);
+
+  return matchesText && matchesBarcodeFilter;
+});
+
+const handleBarcodeSearch = (valueFromEvent) => {
+  const raw = valueFromEvent !== undefined ? valueFromEvent : barcodeSearch;
+  const code = normalizeBarcode(raw);
+
+  if (!code) {
+    setAppliedBarcodeFilter('');
+    return;
+  }
+
+  setAppliedBarcodeFilter(code);
+};
+
+const handleKeyDown = (event) => {
+  if (event.key === 'Enter') {
+    event.preventDefault();
+    handleBarcodeSearch(event.target.value);
+  }
+};
 
   const openStockModal = (product) => {
     setSelectedProduct(product);
@@ -195,16 +217,26 @@ export default function Magazzino() {
       </div>
 
       {/* Ricerca rapida barcode */}
-      <div className="mt-4 p-4 bg-purple-50 rounded-2xl border border-purple-200 mb-6">
+      <div className="flex flex-row gap-4 p-4 bg-purple-50 rounded-2xl border border-purple-200 mb-6">
         <label className="block text-sm font-medium mb-2 text-purple-600">Aggiungi / Modifica Prodotto Rapida</label>
         <input
           type="text"
           value={barcodeSearch}
-          onChange={e => setBarcodeSearch(e.target.value)}
+          onChange={(e) => setBarcodeSearch(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder="Codice a barre"
-          className="w-full border p-4 rounded-2xl text-md"
+          placeholder="Scansiona codice a barre e premi Invio"
+          className="border rounded px-3 py-2 w-full"
         />
+        <button
+        type="button"
+        onClick={() => {
+          setBarcodeSearch('');
+          setAppliedBarcodeFilter('');
+        }}
+        className="bg-gray-700 text-white px-5 py-3 rounded-xl"
+      >
+        ❌
+      </button>
       </div>
 
       {/* Ricerca generale */}
@@ -218,6 +250,7 @@ export default function Magazzino() {
         <table className="w-full">
           <thead className="bg-gray-50">
             <tr>
+              <th className="px-6 py-4 text-left">Codice a Barre</th>
               <th className="px-6 py-4 text-left">Prodotto</th>
               <th className="px-6 py-4 text-left">Categoria</th>
               <th className="px-6 py-4 text-right">Prezzo Vendita</th>
@@ -234,6 +267,7 @@ export default function Magazzino() {
               const isLow = total < (p.min_stock || 1);
               return (
                 <tr key={p.id} className="border-b hover:bg-gray-50">
+                  <td className="px-6 py-5 font-mono text-sm text-gray-700">{p.barcode || '-'}</td>
                   <td className="px-6 py-5 font-medium">{p.name}</td>
                   <td className="px-6 py-5 text-gray-600">{p.category || '-'}</td>
                   <td className="px-6 py-5 text-right font-semibold">€{Number(p.price).toFixed(2)}</td>
