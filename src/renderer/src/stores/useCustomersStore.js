@@ -75,4 +75,50 @@ export const useCustomersStore = create((set, get) => ({
       console.error('❌ updatePoints error:', error);
     }
   },
+   // ==================== MODIFICA CLIENTE ====================
+  updateCustomer: async (id, customerData) => {
+    if (!id || !customerData.name) throw new Error('ID e nome obbligatori');
+
+    try {
+      await window.electronAPI.execute(`
+        UPDATE customers 
+        SET name = ?, phone = ?, email = ?
+        WHERE id = ?
+      `, [
+        customerData.name.trim(),
+        customerData.phone && customerData.phone.trim() ? customerData.phone.trim() : null,
+        customerData.email && customerData.email.trim() ? customerData.email.trim() : null,
+        id
+      ]);
+
+      console.log('✅ Cliente aggiornato:', id);
+      await get().fetchCustomers();
+    } catch (error) {
+      console.error('❌ updateCustomer error:', error);
+      throw error;
+    }
+  },
+
+  // ==================== ELIMINA CLIENTE ====================
+  deleteCustomer: async (id) => {
+    if (!id) return;
+
+    try {
+      // Prima annulla il riferimento nelle vendite storiche (per non perdere la storia)
+      await window.electronAPI.execute(`
+        UPDATE sales SET customer_id = NULL WHERE customer_id = ?
+      `, [id]);
+
+      // Poi elimina il cliente
+      await window.electronAPI.execute(`
+        DELETE FROM customers WHERE id = ?
+      `, [id]);
+
+      console.log('✅ Cliente eliminato:', id);
+      await get().fetchCustomers();
+    } catch (error) {
+      console.error('❌ deleteCustomer error:', error);
+      throw error;
+    }
+  },
 }));

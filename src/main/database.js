@@ -38,7 +38,7 @@ db.exec(`
   CREATE TABLE IF NOT EXISTS customers (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL,
-    phone TEXT UNIQUE,
+    phone TEXT,
     email TEXT,
     points INTEGER DEFAULT 0,
     loyalty_code TEXT UNIQUE,

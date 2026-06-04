@@ -1,12 +1,12 @@
 // src/renderer/pages/Clienti.jsx
 import { useEffect, useState } from 'react';
 import { useCustomersStore } from '../stores/useCustomersStore';
-import { Users, Plus, Star, RefreshCw, X, Search, Gift, Edit2, Download } from 'lucide-react';
+import { Users, Plus, Star, RefreshCw, X, Search, Gift, Edit2, Download, Trash2 } from 'lucide-react';
 import Barcode from 'react-barcode';
 import html2canvas from 'html2canvas';
 
 export default function Clienti() {
-  const { customers, loading, fetchCustomers, addCustomer, regenerateLoyaltyCode, updatePoints } = useCustomersStore();
+  const { customers, loading, fetchCustomers, addCustomer, regenerateLoyaltyCode, updatePoints, deleteCustomer, updateCustomer } = useCustomersStore();
 
   const [showForm, setShowForm] = useState(false);
   const [newCustomer, setNewCustomer] = useState({ name: '', phone: '', email: '' });
@@ -17,6 +17,10 @@ export default function Clienti() {
   // Modale modifica punti
   const [editingPointsCustomer, setEditingPointsCustomer] = useState(null);
   const [newPointsValue, setNewPointsValue] = useState(0);
+
+  // Modale modifica cliente
+  const [editingCustomer, setEditingCustomer] = useState(null);
+  const [editCustomerData, setEditCustomerData] = useState({ name: '', phone: '', email: '' });
 
   // Ricerca
   const [nameSearch, setNameSearch] = useState('');
@@ -70,6 +74,42 @@ export default function Clienti() {
     } catch (error) {
       console.error(error);
       alert("❌ Errore durante l'aggiornamento dei punti");
+    }
+  };
+
+  // ==================== MODIFICA CLIENTE ====================
+  const openEditCustomer = (customer) => {
+    setEditingCustomer(customer);
+    setEditCustomerData({
+      name: customer.name || '',
+      phone: customer.phone || '',
+      email: customer.email || ''
+    });
+  };
+
+  const saveEditedCustomer = async () => {
+    if (!editingCustomer || !editCustomerData.name) return;
+    try {
+      await updateCustomer(editingCustomer.id, editCustomerData);
+      await fetchCustomers();
+      setEditingCustomer(null);
+      alert("✅ Cliente aggiornato con successo!");
+    } catch (error) {
+      console.error(error);
+      alert("❌ Errore durante l'aggiornamento del cliente");
+    }
+  };
+
+  // ==================== CANCELLA CLIENTE ====================
+  const handleDeleteCustomer = async (customer) => {
+    if (!window.confirm(`Vuoi davvero eliminare il cliente "${customer.name}"?\nQuesta azione è irreversibile.`)) return;
+    try {
+      await deleteCustomer(customer.id);
+      await fetchCustomers();
+      alert("✅ Cliente eliminato con successo!");
+    } catch (error) {
+      console.error(error);
+      alert("❌ Errore durante l'eliminazione del cliente");
     }
   };
 
@@ -200,10 +240,24 @@ export default function Clienti() {
               </p>
             </div>
 
-            <div className="mt-4 flex justify-center gap-4">
+            <div className="mt-4 flex justify-center gap-2">
+              <button
+                onClick={(e) => { e.stopPropagation(); openEditCustomer(customer); }}
+                className="text-xs flex items-center gap-1 px-3 py-1.5 bg-amber-100 text-amber-700 rounded-xl hover:bg-amber-200"
+              >
+                <Edit2 className="w-3 h-3" />
+                Modifica
+              </button>
+              <button
+                onClick={(e) => { e.stopPropagation(); handleDeleteCustomer(customer); }}
+                className="text-xs flex items-center gap-1 px-3 py-1.5 bg-red-100 text-red-700 rounded-xl hover:bg-red-200"
+              >
+                <Trash2 className="w-3 h-3" />
+                Elimina
+              </button>
               <button
                 onClick={(e) => { e.stopPropagation(); regenerateLoyaltyCode(customer.id); }}
-                className="text-xs flex items-center gap-1 text-blue-600 hover:text-blue-700"
+                className="text-xs flex items-center gap-1 text-blue-600 hover:text-blue-700 px-2"
               >
                 <RefreshCw className="w-3 h-3" />
                 Rigenera codice
@@ -287,6 +341,45 @@ export default function Clienti() {
             <div className="flex gap-4">
               <button onClick={() => setEditingPointsCustomer(null)} className="flex-1 py-4 border rounded-2xl">Annulla</button>
               <button onClick={savePoints} className="flex-1 bg-green-600 text-white py-4 rounded-2xl">Salva Punti</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modale Modifica Cliente */}
+      {editingCustomer && (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50" onClick={() => setEditingCustomer(null)}>
+          <div onClick={e => e.stopPropagation()} className="bg-white rounded-3xl p-8 max-w-md w-full mx-4">
+            <h2 className="text-2xl font-bold mb-6">Modifica Cliente</h2>
+            
+            <div className="space-y-4">
+              <input
+                type="text"
+                placeholder="Nome e Cognome"
+                value={editCustomerData.name}
+                onChange={e => setEditCustomerData({ ...editCustomerData, name: e.target.value })}
+                className="w-full border p-4 rounded-2xl"
+                required
+              />
+              <input
+                type="tel"
+                placeholder="Telefono"
+                value={editCustomerData.phone}
+                onChange={e => setEditCustomerData({ ...editCustomerData, phone: e.target.value })}
+                className="w-full border p-4 rounded-2xl"
+              />
+              <input
+                type="email"
+                placeholder="Email"
+                value={editCustomerData.email}
+                onChange={e => setEditCustomerData({ ...editCustomerData, email: e.target.value })}
+                className="w-full border p-4 rounded-2xl"
+              />
+            </div>
+
+            <div className="flex gap-4 mt-8">
+              <button onClick={() => setEditingCustomer(null)} className="flex-1 py-4 border rounded-2xl">Annulla</button>
+              <button onClick={saveEditedCustomer} className="flex-1 bg-green-600 text-white py-4 rounded-2xl">Salva Modifiche</button>
             </div>
           </div>
         </div>
