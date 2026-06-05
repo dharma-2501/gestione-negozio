@@ -27,6 +27,9 @@ export default function Cassa() {
   const [loyaltySearch, setLoyaltySearch] = useState('');
   const [loyaltyMessage, setLoyaltyMessage] = useState('');
 
+  // Sconto manuale sul totale carrello
+  const [manualDiscount, setManualDiscount] = useState(0);
+
   const loyaltyInputRef = useRef(null);
 
   useEffect(() => {
@@ -54,7 +57,10 @@ export default function Cassa() {
       : appliedCoupon.discount
     : 0;
 
-  const finalTotal = Math.max(0, total - discountFromPoints - discountFromCoupon);
+  // Sconto manuale (fisso in €)
+  const discountFromManual = Math.min(Math.max(0, parseFloat(manualDiscount) || 0), total);
+
+  const finalTotal = Math.max(0, total - discountFromPoints - discountFromCoupon - discountFromManual);
 
   // GUADAGNO PUNTI: 1 punto ogni €5 sulla spesa dopo coupon ma PRIMA dello sconto punti
   const netAfterCoupon = total - discountFromCoupon;
@@ -107,11 +113,12 @@ export default function Cassa() {
   const handleCompleteSale = async () => {
     try {
       await completeSale(
-  selectedCustomerId, 
-  discountFromPoints, 
-  pointsEarned,
-  appliedCoupon ? appliedCoupon.code : null   // ← tracciamento coupon
-);
+        selectedCustomerId, 
+        discountFromPoints, 
+        pointsEarned,
+        appliedCoupon ? appliedCoupon.code : null,
+        discountFromManual   // ← passa lo sconto manuale
+      );
       
       // === AGGIORNAMENTO IMMEDIATO DEI CLIENTI ===
       await fetchCustomers();                    // ← questa era la riga mancante
@@ -122,6 +129,7 @@ export default function Cassa() {
       setAppliedCoupon(null);
       setSelectedCustomerId(null);
       setLoyaltySearch('');
+      setManualDiscount(0);
       
       notify(`✅ Vendita completata!`);
     } catch (error) {
@@ -225,6 +233,30 @@ export default function Cassa() {
           {appliedCoupon && <div className="mt-3 text-purple-700">✅ {appliedCoupon.code} applicato</div>}
         </div>
 
+        {/* Sconto Manuale */}
+        <div className="mt-4 p-4 bg-orange-50 rounded-2xl border border-orange-200">
+          <div className="flex items-center gap-2 text-orange-600 mb-2">
+            <span>💰 Sconto Manuale</span>
+          </div>
+          <div className="flex gap-2 items-center">
+            <input 
+              type="number" 
+              min="0" 
+              step="0.01"
+              placeholder="0.00" 
+              value={manualDiscount} 
+              onChange={e => setManualDiscount(e.target.value)} 
+              className="flex-1 border rounded-2xl px-4 py-3" 
+            />
+            <span className="text-sm text-orange-600">€</span>
+          </div>
+          {discountFromManual > 0 && (
+            <div className="mt-2 text-sm text-orange-700">
+              Sconto applicato: -€{discountFromManual.toFixed(2)}
+            </div>
+          )}
+        </div>
+
         {/* Punti */}
         {selectedCustomer && selectedCustomer.points > 0 && (
           <div className="mt-4 p-4 bg-yellow-50 rounded-2xl border border-yellow-200">
@@ -249,6 +281,7 @@ export default function Cassa() {
           </div>
           {discountFromCoupon > 0 && <div className="flex justify-between text-purple-600"><span>Sconto Coupon</span><span>-€{discountFromCoupon.toFixed(2)}</span></div>}
           {discountFromPoints > 0 && <div className="flex justify-between text-green-600"><span>Sconto Punti ({actualPointsUsed} pt)</span><span>-€{discountFromPoints.toFixed(2)}</span></div>}
+          {discountFromManual > 0 && <div className="flex justify-between text-orange-600"><span>Sconto Manuale</span><span>-€{discountFromManual.toFixed(2)}</span></div>}
 
           <div className="flex justify-between text-3xl font-bold mt-4">
             <span>Totale</span>

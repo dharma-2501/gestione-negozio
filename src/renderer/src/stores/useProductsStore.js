@@ -165,18 +165,19 @@ export const useProductsStore = create((set, get) => ({
   },
 
   // ==================== COMPLETE SALE ====================
-  completeSale: async (customerId, discountFromPoints = 0, pointsEarned = 0, couponCode = null) => {
+  completeSale: async (customerId, discountFromPoints = 0, pointsEarned = 0, couponCode = null, discountFromManual = 0) => {
     const { cart } = get();
     if (cart.length === 0) return useNotificationStore.getState().addNotification("Carrello vuoto!", 'warning');
 
     const total = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
-    const finalTotal = Math.max(0, total - discountFromPoints);
+    const finalTotal = Math.max(0, total - discountFromPoints - (parseFloat(discountFromManual) || 0));
 
     try {
+      const totalDiscount = (parseFloat(discountFromPoints) || 0) + (parseFloat(discountFromManual) || 0);
       const saleRes = await window.electronAPI.execute(`
         INSERT INTO sales (total, customer_id, discount, points_earned, coupon_code)
         VALUES (?, ?, ?, ?, ?)
-      `, [finalTotal, customerId || null, discountFromPoints, pointsEarned, couponCode]);
+      `, [finalTotal, customerId || null, totalDiscount, pointsEarned, couponCode]);
 
       const saleId = saleRes.lastInsertRowid;
 
