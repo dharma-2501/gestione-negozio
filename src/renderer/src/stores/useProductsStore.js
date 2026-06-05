@@ -33,6 +33,11 @@ export const useProductsStore = create((set, get) => ({
     console.log('🚀 addProduct chiamato con dati:', productData);
     if (!productData.name || !productData.price) throw new Error('Nome e prezzo obbligatori');
     try {
+      // Normalize barcode: empty or whitespace-only → null
+      const normalizedBarcode = productData.barcode 
+        ? productData.barcode.trim().replace(/[\r\n\t]/g, '').replace(/\s+/g, '') || null
+        : null;
+
       const res = await window.electronAPI.execute(`
         INSERT INTO products (name, price, purchase_price, category, barcode, min_stock)
         VALUES (?, ?, ?, ?, ?, ?)
@@ -41,7 +46,7 @@ export const useProductsStore = create((set, get) => ({
         parseFloat(productData.price) || 0,
         productData.purchasePrice ? parseFloat(productData.purchasePrice) : null,
         productData.category || null,
-        productData.barcode ? productData.barcode.trim() : null,
+        normalizedBarcode,
         parseInt(productData.min_stock) || 5
       ]);
       await get().fetchProducts();
@@ -55,6 +60,11 @@ export const useProductsStore = create((set, get) => ({
   // ==================== UPDATE PRODOTTO ====================
   updateProduct: async (id, productData) => {
     try {
+      // Normalize barcode: empty or whitespace-only → null
+      const normalizedBarcode = productData.barcode 
+        ? productData.barcode.trim().replace(/[\r\n\t]/g, '').replace(/\s+/g, '') || null
+        : null;
+
       await window.electronAPI.execute(`
         UPDATE products 
         SET name = ?, price = ?, purchase_price = ?, category = ?, barcode = ?, min_stock = ?
@@ -64,7 +74,7 @@ export const useProductsStore = create((set, get) => ({
         parseFloat(productData.price) || 0,
         productData.purchasePrice ? parseFloat(productData.purchasePrice) : null,
         productData.category || null,
-        productData.barcode || null,
+        normalizedBarcode,
         parseInt(productData.min_stock) || 5,
         id
       ]);
