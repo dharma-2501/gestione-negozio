@@ -1,5 +1,5 @@
 // src/renderer/pages/Cassa.jsx
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useProductsStore } from '../stores/useProductsStore';
 import { useCustomersStore } from '../stores/useCustomersStore';
 import { useCouponsStore } from '../stores/useCouponsStore';
@@ -23,6 +23,9 @@ export default function Cassa() {
   const [appliedCoupon, setAppliedCoupon] = useState(null);
 
   const [loyaltySearch, setLoyaltySearch] = useState('');
+  const [loyaltyMessage, setLoyaltyMessage] = useState('');
+
+  const loyaltyInputRef = useRef(null);
 
   useEffect(() => {
     fetchCustomers();
@@ -68,20 +71,35 @@ export default function Cassa() {
     alert(`✅ Coupon "${coupon.code}" applicato!`);
   };
 
-  const handleLoyaltySearch = () => {
-    const code = loyaltySearch.trim().replace(/'/g, '-').toUpperCase();
-    if (!code) return;
+  const focusLoyaltyInput = () => {
+    window.setTimeout(() => loyaltyInputRef.current?.focus(), 0);
+  };
 
-    const found = customers.find(c => 
+  const handleLoyaltySearch = (event) => {
+    if (event?.preventDefault) event.preventDefault();
+
+    const code = loyaltySearch.trim().replace(/'/g, '-').toUpperCase();
+    if (!code) {
+      setLoyaltyMessage('');
+      focusLoyaltyInput();
+      return;
+    }
+
+    const found = customers.find(c =>
       c.loyalty_code && c.loyalty_code.toUpperCase() === code
     );
+
     if (found) {
       setSelectedCustomerId(found.id);
       setLoyaltySearch('');
-      alert(`✅ Cliente trovato: ${found.name}`);
-    } else {
-      alert("❌ Nessun cliente trovato con questo codice tessera fedeltà");
+      setLoyaltyMessage(`✅ Cliente trovato: ${found.name}`);
+      focusLoyaltyInput();
+      return;
     }
+
+    setLoyaltySearch('');
+    setLoyaltyMessage('❌ Nessun cliente trovato con questo codice tessera fedeltà');
+    focusLoyaltyInput();
   };
 
   const handleCompleteSale = async () => {
@@ -129,6 +147,7 @@ export default function Cassa() {
         <div className="mb-4 bg-white p-4 rounded-3xl border flex items-center gap-3">
           <Gift className="w-6 h-6 text-amber-500" />
           <input
+            ref={loyaltyInputRef}
             type="text"
             placeholder="Codice Tessera Fedeltà (premi Invio)"
             value={loyaltySearch}
@@ -137,11 +156,12 @@ export default function Cassa() {
               const normalized = e.target.value.replace(/'/g, '-');
               setLoyaltySearch(normalized);
             }}
-            onKeyDown={e => e.key === 'Enter' && handleLoyaltySearch()}
+            onKeyDown={e => e.key === 'Enter' && handleLoyaltySearch(e)}
             className="flex-1 border-0 bg-transparent text-lg focus:outline-none"
           />
-          <button onClick={handleLoyaltySearch} className="bg-amber-500 text-white px-5 py-2 rounded-2xl text-sm font-medium">Cerca</button>
+          <button onClick={(e) => handleLoyaltySearch(e)} className="bg-amber-500 text-white px-5 py-2 rounded-2xl text-sm font-medium">Cerca</button>
         </div>
+        {loyaltyMessage && <p className="mb-4 text-sm text-amber-700">{loyaltyMessage}</p>}
 
         <div className="mb-6 bg-white p-4 rounded-3xl border flex items-center gap-3">
           <User className="w-6 h-6 text-gray-400" />

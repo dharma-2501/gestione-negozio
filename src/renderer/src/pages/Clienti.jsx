@@ -1,5 +1,5 @@
 // src/renderer/pages/Clienti.jsx
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useCustomersStore } from '../stores/useCustomersStore';
 import { Users, Plus, Star, RefreshCw, X, Search, Gift, Edit2, Download, Trash2 } from 'lucide-react';
 import Barcode from 'react-barcode';
@@ -26,6 +26,9 @@ export default function Clienti() {
   const [nameSearch, setNameSearch] = useState('');
   const [loyaltySearch, setLoyaltySearch] = useState('');   // filtro attivo (solo su Invio)
   const [loyaltyInput, setLoyaltyInput] = useState('');     // campo di input (non filtra in tempo reale)
+  const [loyaltyMessage, setLoyaltyMessage] = useState('');
+
+  const loyaltyInputRef = useRef(null);
 
   useEffect(() => {
     fetchCustomers();
@@ -50,6 +53,35 @@ export default function Clienti() {
     await addCustomer(newCustomer);
     setNewCustomer({ name: '', phone: '', email: '' });
     setShowForm(false);
+  };
+
+  const focusLoyaltyInput = () => {
+    window.setTimeout(() => loyaltyInputRef.current?.focus(), 0);
+  };
+
+  const handleLoyaltySearch = (e) => {
+    e.preventDefault();
+
+    const term = loyaltyInput.trim().replace(/'/g, '-').toUpperCase();
+    if (!term) {
+      setLoyaltySearch('');
+      setLoyaltyMessage('');
+      focusLoyaltyInput();
+      return;
+    }
+
+    setLoyaltySearch(term);
+    const hasMatch = customers.some(c =>
+      c.loyalty_code && c.loyalty_code.toUpperCase().includes(term)
+    );
+
+    setLoyaltyMessage(
+      hasMatch
+        ? `✅ Trovati clienti con codice ${term}`
+        : '❌ Nessun cliente trovato con questo codice tessera fedeltà'
+    );
+
+    focusLoyaltyInput();
   };
 
   const openCard = (customer) => {
@@ -177,6 +209,7 @@ export default function Clienti() {
         <div className="flex-1 bg-white p-4 rounded-3xl border flex items-center gap-3">
           <Gift className="w-6 h-6 text-amber-500" />
           <input
+            ref={loyaltyInputRef}
             type="text"
             placeholder="Codice Tessera Fedeltà (premi Invio per cercare)"
             value={loyaltyInput}
@@ -185,15 +218,12 @@ export default function Clienti() {
               const normalized = e.target.value.replace(/'/g, '-');
               setLoyaltyInput(normalized);
             }}
-            onKeyDown={e => {
-              if (e.key === 'Enter') {
-                setLoyaltySearch(loyaltyInput); // attiva filtro solo su Invio
-              }
-            }}
+            onKeyDown={e => e.key === 'Enter' && handleLoyaltySearch(e)}
             className="flex-1 border-0 bg-transparent text-lg focus:outline-none"
           />
         </div>
       </div>
+      {loyaltyMessage && <p className="mb-4 text-sm text-amber-700">{loyaltyMessage}</p>}
 
       {/* Form Nuovo Cliente */}
       {showForm && (
