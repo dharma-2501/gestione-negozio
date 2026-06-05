@@ -17,7 +17,7 @@ db.exec(`
     price REAL NOT NULL,
     purchase_price REAL,
     category TEXT,
-    barcode TEXT UNIQUE,
+    barcode TEXT,
     min_stock INTEGER DEFAULT 5,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
   );

@@ -142,17 +142,17 @@ const handleKeyDown = (event) => {
     if (!newProduct.name || !newProduct.price) return notify("Nome e prezzo sono obbligatori!");
 
     try {
-      const productToAdd = { ...newProduct };
       const quantity = newProduct.quantity ? parseInt(newProduct.quantity) : 0;
-      
-      await addProduct(productToAdd);
-      
-      if (quantity > 0) {
-        const products = await fetchProducts();
-        const addedProduct = products[products.length - 1];
-        await addBatch(addedProduct.id, quantity, null, null, 'Quantità iniziale');
+
+      // Aggiungi il prodotto e recupera l'ID reale dal database
+      const result = await addProduct(newProduct);
+      const newProductId = result.lastInsertRowid;
+
+      // Se è stata indicata una quantità iniziale, aggiungila come primo lotto
+      if (quantity > 0 && newProductId) {
+        await addBatch(newProductId, quantity, null, null, 'Quantità iniziale');
       }
-      
+
       setShowAddModal(false);
       setNewProduct({ name: '', price: '', purchasePrice: '', category: '', barcode: '', min_stock: 1, quantity: '' });
       fetchProducts();
@@ -222,7 +222,22 @@ const handleKeyDown = (event) => {
         </h1>
         <div className="flex gap-3">
           <button onClick={() => setShowCategoryModal(true)} className="bg-gray-700 text-white px-5 py-3 rounded-xl">Gestisci Categorie</button>
-          <button onClick={() => setShowAddModal(true)} className="bg-black text-white px-6 py-3 rounded-xl flex items-center gap-2">
+          <button 
+            onClick={() => {
+              // Reset completo del form ogni volta che si apre "Nuovo Prodotto"
+              setNewProduct({ 
+                name: '', 
+                price: '', 
+                purchasePrice: '', 
+                category: '', 
+                barcode: '', 
+                min_stock: 1, 
+                quantity: '' 
+              });
+              setShowAddModal(true);
+            }} 
+            className="bg-black text-white px-6 py-3 rounded-xl flex items-center gap-2"
+          >
             <Plus /> Nuovo Prodotto
           </button>
         </div>
@@ -319,7 +334,24 @@ const handleKeyDown = (event) => {
               <input type="number" placeholder="Quantità iniziale (opzionale)" value={newProduct.quantity} onChange={e => setNewProduct({...newProduct, quantity: e.target.value})} className="w-full border p-4 rounded-2xl" />
               <button type="submit" className="w-full bg-green-600 text-white py-4 rounded-2xl font-semibold">Salva Prodotto</button>
             </form>
-            <button onClick={() => setShowAddModal(false)} className="mt-4 w-full py-4 border rounded-2xl">Annulla</button>
+            <button 
+              onClick={() => {
+                // Reset del form anche quando si annulla
+                setNewProduct({ 
+                  name: '', 
+                  price: '', 
+                  purchasePrice: '', 
+                  category: '', 
+                  barcode: '', 
+                  min_stock: 1, 
+                  quantity: '' 
+                });
+                setShowAddModal(false);
+              }} 
+              className="mt-4 w-full py-4 border rounded-2xl"
+            >
+              Annulla
+            </button>
           </div>
         </div>
       )}
