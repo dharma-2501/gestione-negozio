@@ -40,11 +40,17 @@ old_cur = old_conn.cursor()
 new_cur = new_conn.cursor()
 
 try:
-    # 1. Migra prodotti da Warehouse
+    # Mappatura vecchio ID → nuovo ID prodotto
+    old_to_new_id = {}
+    inserted_count = 0
+    skipped_count = 0
+
+    # 1. Migra prodotti da Warehouse (permette duplicati di barcode)
     print("📦 Migrazione prodotti da Warehouse...")
     old_cur.execute("SELECT id, barcode, description, instock, public_price, private_price FROM Warehouse")
     
     for row in old_cur.fetchall():
+        old_id = row[0]
         barcode = row[1]
         full_description = row[2] or f"Prodotto {barcode or 'senza nome'}"
         
@@ -53,6 +59,10 @@ try:
         clean_name = full_description[6:].strip()
         if not clean_name:
             clean_name = full_description.strip()
+
+        # Evita nome vuoto
+        if not clean_name:
+            clean_name = f"Prodotto {barcode or old_id}"
         
         public_price = float(row[4]) if row[4] is not None else 0.0
         private_price = float(row[5]) if row[5] is not None else None
@@ -60,30 +70,41 @@ try:
         # Crea categoria se non esiste
         new_cur.execute("INSERT OR IGNORE INTO categories (name) VALUES (?)", (category,))
 
-        # Inserisci prodotto con nome pulito e categoria
-        new_cur.execute("""
-            INSERT OR IGNORE INTO products 
-                (name, price, purchase_price, category, barcode, min_stock, created_at)
-            VALUES (?, ?, ?, ?, ?, 2, CURRENT_TIMESTAMP)
-        """, (clean_name, public_price, private_price, category, barcode))
+        try:
+            # Inserisci prodotto (senza OR IGNORE → permette barcode duplicati)
+            new_cur.execute("""
+                INSERT INTO products 
+                    (name, price, purchase_price, category, barcode, min_stock, created_at)
+                VALUES (?, ?, ?, ?, ?, 5, CURRENT_TIMESTAMP)
+            """, (clean_name, public_price, private_price, category, barcode))
+
+            new_product_id = new_cur.lastrowid
+            old_to_new_id[old_id] = new_product_id
+            inserted_count += 1
+
+        except Exception as e:
+            print(f"⚠️  Riga saltata (ID {old_id}): {e}")
+            skipped_count += 1
+            continue
 
     new_conn.commit()
-    print("✅ Prodotti e categorie migrati")
+    print(f"✅ Prodotti migrati: {inserted_count} | Saltati: {skipped_count}")
 
-    # 2. Migra stock da instock → stock_batches
+    # 2. Migra stock usando la mappatura ID (funziona anche senza barcode)
     print("📦 Migrazione stock iniziale...")
-    new_cur.execute("SELECT id, barcode FROM products WHERE barcode IS NOT NULL")
-    for prod_id, barcode in new_cur.fetchall():
-        old_cur.execute("SELECT instock FROM Warehouse WHERE barcode = ?", (barcode,))
-        result = old_cur.fetchone()
-        if result and result[0] and result[0] > 0:
+    stock_count = 0
+    old_cur.execute("SELECT id, instock FROM Warehouse")
+    for old_id, instock in old_cur.fetchall():
+        if old_id in old_to_new_id and instock and instock > 0:
+            new_prod_id = old_to_new_id[old_id]
             new_cur.execute("""
                 INSERT INTO stock_batches (product_id, quantity, entry_date, notes)
                 VALUES (?, ?, CURRENT_TIMESTAMP, 'Migrazione dal vecchio database')
-            """, (prod_id, result[0]))
+            """, (new_prod_id, instock))
+            stock_count += 1
 
     new_conn.commit()
-    print("✅ Stock migrato in stock_batches")
+    print(f"✅ Stock migrato in stock_batches: {stock_count} record")
 
     # 3. Migra vendite (approssimativa)
     print("📦 Migrazione vendite...")

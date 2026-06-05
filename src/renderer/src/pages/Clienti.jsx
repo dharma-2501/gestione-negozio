@@ -24,7 +24,8 @@ export default function Clienti() {
 
   // Ricerca
   const [nameSearch, setNameSearch] = useState('');
-  const [loyaltySearch, setLoyaltySearch] = useState('');
+  const [loyaltySearch, setLoyaltySearch] = useState('');   // filtro attivo (solo su Invio)
+  const [loyaltyInput, setLoyaltyInput] = useState('');     // campo di input (non filtra in tempo reale)
 
   useEffect(() => {
     fetchCustomers();
@@ -36,6 +37,7 @@ export default function Clienti() {
       (c.phone && c.phone.includes(nameSearch)) ||
       (c.email && c.email.toLowerCase().includes(nameSearch.toLowerCase()));
 
+    // Ricerca tessera fedeltà solo quando loyaltySearch viene impostato (su Invio)
     const matchesLoyalty = !loyaltySearch || 
       (c.loyalty_code && c.loyalty_code.toLowerCase().includes(loyaltySearch.toLowerCase()));
 
@@ -176,9 +178,18 @@ export default function Clienti() {
           <Gift className="w-6 h-6 text-amber-500" />
           <input
             type="text"
-            placeholder="Codice Tessera Fedeltà"
-            value={loyaltySearch}
-            onChange={e => setLoyaltySearch(e.target.value)}
+            placeholder="Codice Tessera Fedeltà (premi Invio per cercare)"
+            value={loyaltyInput}
+            onChange={e => {
+              // Normalizza ' → - (per pistola barcode)
+              const normalized = e.target.value.replace(/'/g, '-');
+              setLoyaltyInput(normalized);
+            }}
+            onKeyDown={e => {
+              if (e.key === 'Enter') {
+                setLoyaltySearch(loyaltyInput); // attiva filtro solo su Invio
+              }
+            }}
             className="flex-1 border-0 bg-transparent text-lg focus:outline-none"
           />
         </div>

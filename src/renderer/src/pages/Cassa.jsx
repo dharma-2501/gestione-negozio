@@ -69,9 +69,11 @@ export default function Cassa() {
   };
 
   const handleLoyaltySearch = () => {
-    if (!loyaltySearch.trim()) return;
+    const code = loyaltySearch.trim().replace(/'/g, '-').toUpperCase();
+    if (!code) return;
+
     const found = customers.find(c => 
-      c.loyalty_code && c.loyalty_code.toUpperCase() === loyaltySearch.trim().toUpperCase()
+      c.loyalty_code && c.loyalty_code.toUpperCase() === code
     );
     if (found) {
       setSelectedCustomerId(found.id);
@@ -128,9 +130,13 @@ export default function Cassa() {
           <Gift className="w-6 h-6 text-amber-500" />
           <input
             type="text"
-            placeholder="Codice Tessera Fedeltà"
+            placeholder="Codice Tessera Fedeltà (premi Invio)"
             value={loyaltySearch}
-            onChange={e => setLoyaltySearch(e.target.value)}
+            onChange={e => {
+              // Converte automaticamente ' in - (problema pistola barcode)
+              const normalized = e.target.value.replace(/'/g, '-');
+              setLoyaltySearch(normalized);
+            }}
             onKeyDown={e => e.key === 'Enter' && handleLoyaltySearch()}
             className="flex-1 border-0 bg-transparent text-lg focus:outline-none"
           />
