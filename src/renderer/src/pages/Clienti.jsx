@@ -1,12 +1,14 @@
 // src/renderer/pages/Clienti.jsx
 import { useEffect, useRef, useState } from 'react';
 import { useCustomersStore } from '../stores/useCustomersStore';
+import { useNotification } from '../hooks/useNotification';
 import { Users, Plus, Star, RefreshCw, X, Search, Gift, Edit2, Download, Trash2 } from 'lucide-react';
 import Barcode from 'react-barcode';
 import html2canvas from 'html2canvas';
 
 export default function Clienti() {
   const { customers, loading, fetchCustomers, addCustomer, regenerateLoyaltyCode, updatePoints, deleteCustomer, updateCustomer } = useCustomersStore();
+  const { notify } = useNotification();
 
   const [showForm, setShowForm] = useState(false);
   const [newCustomer, setNewCustomer] = useState({ name: '', phone: '', email: '' });
@@ -104,10 +106,10 @@ export default function Clienti() {
       await updatePoints(editingPointsCustomer.id, parseInt(newPointsValue) || 0);
       await fetchCustomers();
       setEditingPointsCustomer(null);
-      alert("✅ Punti aggiornati con successo!");
+      notify("✅ Punti aggiornati con successo!");
     } catch (error) {
       console.error(error);
-      alert("❌ Errore durante l'aggiornamento dei punti");
+      notify("❌ Errore durante l'aggiornamento dei punti");
     }
   };
 
@@ -127,10 +129,10 @@ export default function Clienti() {
       await updateCustomer(editingCustomer.id, editCustomerData);
       await fetchCustomers();
       setEditingCustomer(null);
-      alert("✅ Cliente aggiornato con successo!");
+      notify("✅ Cliente aggiornato con successo!");
     } catch (error) {
       console.error(error);
-      alert("❌ Errore durante l'aggiornamento del cliente");
+      notify("❌ Errore durante l'aggiornamento del cliente");
     }
   };
 
@@ -140,17 +142,17 @@ export default function Clienti() {
     try {
       await deleteCustomer(customer.id);
       await fetchCustomers();
-      alert("✅ Cliente eliminato con successo!");
+      notify("✅ Cliente eliminato con successo!");
     } catch (error) {
       console.error(error);
-      alert("❌ Errore durante l'eliminazione del cliente");
+      notify("❌ Errore durante l'eliminazione del cliente");
     }
   };
 
   // ==================== SALVA CODICE A BARRE CON SCELTA CARTELLA ====================
   const downloadBarcode = async (customer) => {
     const element = document.getElementById(`barcode-${customer.id}`);
-    if (!element) return alert("Errore: barcode non trovato");
+    if (!element) return notify("Errore: barcode non trovato");
 
     try {
       const canvas = await html2canvas(element, { 
@@ -166,15 +168,15 @@ export default function Clienti() {
       );
 
       if (result.success) {
-        alert(`✅ Codice a barre salvato correttamente!\n${result.path}`);
+        notify(`✅ Codice a barre salvato correttamente!\n${result.path}`);
       } else if (result.canceled) {
         // L'utente ha annullato
       } else {
-        alert("Salvataggio fallito");
+        notify("Salvataggio fallito");
       }
     } catch (err) {
       console.error(err);
-      alert("Errore durante il salvataggio del barcode");
+      notify("Errore durante il salvataggio del barcode");
     }
   };
 

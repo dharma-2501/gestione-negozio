@@ -1,12 +1,14 @@
 // src/renderer/pages/Coupon.jsx
 import { useEffect, useState } from 'react';
 import { useCouponsStore } from '../stores/useCouponsStore';
+import { useNotification } from '../hooks/useNotification';
 import { Ticket, Plus, ToggleLeft, ToggleRight, Download, X } from 'lucide-react';
 import Barcode from 'react-barcode';
 import html2canvas from 'html2canvas';
 
 export default function Coupon() {
   const { coupons, fetchCoupons, addCoupon, toggleCoupon } = useCouponsStore();
+  const { notify } = useNotification();
 
   const [showForm, setShowForm] = useState(false);
   const [selectedCoupon, setSelectedCoupon] = useState(null);
@@ -28,7 +30,7 @@ export default function Coupon() {
   const handleAddCoupon = async (e) => {
     e.preventDefault();
     if (!newCoupon.code || !newCoupon.discount) {
-      return alert("Codice e valore sconto sono obbligatori!");
+      return notify("Codice e valore sconto sono obbligatori!");
     }
 
     try {
@@ -42,10 +44,10 @@ export default function Coupon() {
 
       setNewCoupon({ code: '', discount: '', type: 'percent', expires_at: '', neverExpires: true, min_spend: 0 });
       setShowForm(false);
-      alert("✅ Coupon creato con successo!");
+      notify("✅ Coupon creato con successo!");
     } catch (error) {
       console.error("Errore addCoupon:", error);
-      alert(`❌ Errore durante la creazione del coupon:\n${error.message || error}`);
+      notify(`❌ Errore durante la creazione del coupon:\n${error.message || error}`);
     }
   };
 
@@ -54,7 +56,7 @@ export default function Coupon() {
   // ==================== DOWNLOAD BARCODE ====================
   const downloadBarcode = async (coupon) => {
     const element = document.getElementById(`barcode-${coupon.id}`);
-    if (!element) return alert("Errore: barcode non trovato");
+    if (!element) return notify("Errore: barcode non trovato");
 
     try {
       const canvas = await html2canvas(element, { 
@@ -70,13 +72,13 @@ export default function Coupon() {
       );
 
       if (result.success) {
-        alert(`✅ Coupon salvato!\n${result.path}`);
+        notify(`✅ Coupon salvato!\n${result.path}`);
       } else {
-        alert("Salvataggio annullato o fallito");
+        notify("Salvataggio annullato o fallito");
       }
     } catch (err) {
       console.error(err);
-      alert("Errore durante il salvataggio del barcode");
+      notify("Errore durante il salvataggio del barcode");
     }
   };
 

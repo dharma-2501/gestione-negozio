@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react';
 import { useProductsStore } from '../stores/useProductsStore';
 import { useCategoriesStore } from '../stores/useCategoriesStore';
+import { useNotification } from '../hooks/useNotification';
 import { Package, Plus, Edit2, Trash2, Check, X } from 'lucide-react';
 
 export default function Magazzino() {
@@ -18,6 +19,7 @@ export default function Magazzino() {
   } = useProductsStore();
 
   const { categories, fetchCategories, addCategory, deleteCategory, updateCategory } = useCategoriesStore();
+  const { notify } = useNotification();
 
 const [searchTerm, setSearchTerm] = useState('');
 const [barcodeSearch, setBarcodeSearch] = useState('');
@@ -92,25 +94,25 @@ const handleKeyDown = (event) => {
   };
 
   const handleStockAction = async () => {
-    if (!selectedProduct || !stockForm.quantity) return alert("Inserisci una quantità!");
+    if (!selectedProduct || !stockForm.quantity) return notify("Inserisci una quantità!");
     const qty = parseInt(stockForm.quantity);
-    if (isNaN(qty)) return alert("Quantità non valida");
+    if (isNaN(qty)) return notify("Quantità non valida");
 
     const current = getTotalStock(selectedProduct.id);
 
     try {
       if (stockForm.action === 'set') {
-        if (qty < 0) return alert("La quantità non può essere negativa!");
+        if (qty < 0) return notify("La quantità non può essere negativa!");
         if (qty < current && !window.confirm(`Stai riducendo da ${current} a ${qty} pezzi.\n\nConfermi?`)) return;
         await addBatch(selectedProduct.id, qty - current, null, null, 'Correzione quantità');
       } else {
         await addBatch(selectedProduct.id, qty, null, null, 'Aggiunta merce');
       }
       setShowStockModal(false);
-      alert("✅ Quantità aggiornata con successo!");
+      notify("✅ Quantità aggiornata con successo!");
     } catch (error) {
       console.error("Errore handleStockAction:", error);
-      alert(`❌ Errore:\n${error.message || error}`);
+      notify(`❌ Errore:\n${error.message || error}`);
     }
   };
 
@@ -137,30 +139,30 @@ const handleKeyDown = (event) => {
 
   const handleAddNewProduct = async (e) => {
     e.preventDefault();
-    if (!newProduct.name || !newProduct.price) return alert("Nome e prezzo sono obbligatori!");
+    if (!newProduct.name || !newProduct.price) return notify("Nome e prezzo sono obbligatori!");
 
     try {
       await addProduct(newProduct);
       setShowAddModal(false);
       setNewProduct({ name: '', price: '', purchasePrice: '', category: '', barcode: '', min_stock: 1 });
       fetchProducts();
-      alert("✅ Prodotto aggiunto con successo!");
+      notify("✅ Prodotto aggiunto con successo!");
     } catch (error) {
       console.error("Errore addProduct:", error);
-      alert(`❌ Errore durante l'aggiunta:\n${error.message || error}`);
+      notify(`❌ Errore durante l'aggiunta:\n${error.message || error}`);
     }
   };
 
   const handleAddCategory = async () => {
     const name = newCategoryName.trim();
-    if (!name) return alert("Inserisci il nome della categoria");
+    if (!name) return notify("Inserisci il nome della categoria");
     try {
       await addCategory(name);
       setNewCategoryName('');
-      alert(`✅ Categoria "${name}" aggiunta con successo!`);
+      notify(`✅ Categoria "${name}" aggiunta con successo!`);
     } catch (error) {
       console.error("Errore completo:", error);
-      alert(`❌ Errore durante l'aggiunta della categoria:\n\n${error.message || error}`);
+      notify(`❌ Errore durante l'aggiunta della categoria:\n\n${error.message || error}`);
     }
   };
 
@@ -169,10 +171,10 @@ const handleKeyDown = (event) => {
     try {
       await deleteCategory(id);
       await fetchCategories();
-      alert("✅ Categoria eliminata con successo!");
+      notify("✅ Categoria eliminata con successo!");
     } catch (error) {
       console.error(error);
-      alert("❌ Errore durante l'eliminazione della categoria");
+      notify("❌ Errore durante l'eliminazione della categoria");
     }
   };
 
@@ -188,10 +190,10 @@ const handleKeyDown = (event) => {
       await updateCategory(editingCategoryId, editingCategoryName);
       setEditingCategoryId(null);
       setEditingCategoryName('');
-      alert("✅ Categoria rinominata con successo!");
+      notify("✅ Categoria rinominata con successo!");
     } catch (error) {
       console.error(error);
-      alert(`❌ Errore durante la rinomina:\n${error.message || error}`);
+      notify(`❌ Errore durante la rinomina:\n${error.message || error}`);
     }
   };
 

@@ -4,6 +4,7 @@ import { useProductsStore } from '../stores/useProductsStore';
 import { useCustomersStore } from '../stores/useCustomersStore';
 import { useCouponsStore } from '../stores/useCouponsStore';
 import { useSettingsStore } from '../stores/useSettingsStore';
+import { useNotification } from '../hooks/useNotification';
 import { ShoppingCart, Plus, Minus, Trash2, User, Gift, Ticket, AlertTriangle } from 'lucide-react';
 
 export default function Cassa() {
@@ -11,6 +12,7 @@ export default function Cassa() {
   const { customers, fetchCustomers } = useCustomersStore();
   const { coupons, fetchCoupons } = useCouponsStore();
   const { getPointsPerEuro } = useSettingsStore();
+  const { notify } = useNotification();
 
   const [search, setSearch] = useState('');
   const [selectedCustomerId, setSelectedCustomerId] = useState(null);
@@ -60,15 +62,15 @@ export default function Cassa() {
 
   // Applica Coupon
   const applyCoupon = () => {
-    if (!couponCode.trim()) return alert("Inserisci un codice coupon");
+    if (!couponCode.trim()) return notify("Inserisci un codice coupon");
     const coupon = coupons.find(c => c.code.toUpperCase() === couponCode.toUpperCase() && c.is_active);
-    if (!coupon) return alert("❌ Coupon non valido");
-    if (coupon.expires_at && new Date(coupon.expires_at) < new Date()) return alert("❌ Coupon scaduto");
-    if (coupon.min_spend > 0 && total < coupon.min_spend) return alert(`❌ Minimo spesa: €${coupon.min_spend}`);
+    if (!coupon) return notify("❌ Coupon non valido");
+    if (coupon.expires_at && new Date(coupon.expires_at) < new Date()) return notify("❌ Coupon scaduto");
+    if (coupon.min_spend > 0 && total < coupon.min_spend) return notify(`❌ Minimo spesa: €${coupon.min_spend}`);
 
     setAppliedCoupon(coupon);
     setCouponCode('');
-    alert(`✅ Coupon "${coupon.code}" applicato!`);
+    notify(`✅ Coupon "${coupon.code}" applicato!`);
   };
 
   const focusLoyaltyInput = () => {
@@ -121,10 +123,10 @@ export default function Cassa() {
       setSelectedCustomerId(null);
       setLoyaltySearch('');
       
-      alert(`✅ Vendita completata!`);
+      notify(`✅ Vendita completata!`);
     } catch (error) {
       console.error("Errore completeSale:", error);
-      alert("❌ Errore durante il completamento della vendita");
+      notify("❌ Errore durante il completamento della vendita");
     }
   };
 

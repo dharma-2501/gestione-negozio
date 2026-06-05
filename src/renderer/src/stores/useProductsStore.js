@@ -1,5 +1,6 @@
 // src/renderer/stores/useProductsStore.js
 import { create } from 'zustand';
+import { useNotificationStore } from './useNotificationStore';
 
 export const useProductsStore = create((set, get) => ({
   products: [],
@@ -96,10 +97,10 @@ export const useProductsStore = create((set, get) => ({
       console.log('✅ Prodotto eliminato con successo');
       await get().fetchProducts();   // refresh tabella
 
-      alert('✅ Prodotto eliminato con successo!');
+      useNotificationStore.getState().addNotification('✅ Prodotto eliminato con successo!', 'success');
     } catch (error) {
       console.error('❌ deleteProduct error:', error);
-      alert(`❌ Errore durante l’eliminazione:\n${error.message || error}`);
+      useNotificationStore.getState().addNotification(`❌ Errore durante l’eliminazione:\n${error.message || error}`, 'error');
     }
   },
 
@@ -156,7 +157,7 @@ export const useProductsStore = create((set, get) => ({
   // ==================== COMPLETE SALE ====================
   completeSale: async (customerId, discountFromPoints = 0, pointsEarned = 0, couponCode = null) => {
     const { cart } = get();
-    if (cart.length === 0) return alert("Carrello vuoto!");
+    if (cart.length === 0) return useNotificationStore.getState().addNotification("Carrello vuoto!", 'warning');
 
     const total = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
     const finalTotal = Math.max(0, total - discountFromPoints);
@@ -196,10 +197,10 @@ export const useProductsStore = create((set, get) => ({
 
       set({ cart: [] });
       await get().fetchProducts();
-      alert(`✅ Vendita completata! Totale €${finalTotal.toFixed(2)}`);
+      useNotificationStore.getState().addNotification(`✅ Vendita completata! Totale €${finalTotal.toFixed(2)}`, 'success');
     } catch (error) {
       console.error('❌ completeSale error:', error);
-      alert("Errore durante la vendita");
+      useNotificationStore.getState().addNotification("Errore durante la vendita", 'error');
     }
   },
 }));

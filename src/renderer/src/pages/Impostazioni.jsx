@@ -1,10 +1,12 @@
 // src/renderer/pages/Impostazioni.jsx
 import { useEffect, useState } from 'react';
 import { useSettingsStore } from '../stores/useSettingsStore';
+import { useNotification } from '../hooks/useNotification';
 import { Settings, Save } from 'lucide-react';
 
 export default function Impostazioni() {
   const { settings, fetchSettings, updateSetting, getPointsPerEuro } = useSettingsStore();
+  const { notify } = useNotification();
   const [pointsPerEuro, setPointsPerEuro] = useState(10);
 
   useEffect(() => {
@@ -19,7 +21,7 @@ export default function Impostazioni() {
 
   const handleSave = async () => {
     await updateSetting('points_per_euro', pointsPerEuro);
-    alert('✅ Impostazione salvata!');
+    notify('✅ Impostazione salvata!');
   };
 
   return (

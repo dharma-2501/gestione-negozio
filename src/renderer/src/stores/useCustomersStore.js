@@ -1,5 +1,6 @@
 // src/renderer/stores/useCustomersStore.js
 import { create } from 'zustand';
+import { useNotificationStore } from './useNotificationStore';
 
 export const useCustomersStore = create((set, get) => ({
   customers: [],
@@ -56,10 +57,10 @@ export const useCustomersStore = create((set, get) => ({
 
       console.log('✅ Codice rigenerato:', newCode);
       await get().fetchCustomers();
-      alert(`✅ Nuovo codice: ${newCode}`);
+      useNotificationStore.getState().addNotification(`✅ Nuovo codice: ${newCode}`, 'success');
     } catch (error) {
       console.error('❌ regenerateLoyaltyCode error:', error);
-      alert('Errore durante la rigenerazione del codice');
+      useNotificationStore.getState().addNotification('Errore durante la rigenerazione del codice', 'error');
     }
   },
 
