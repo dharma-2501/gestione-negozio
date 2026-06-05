@@ -28,7 +28,7 @@ const [appliedBarcodeFilter, setAppliedBarcodeFilter] = useState('')
   const [showStockModal, setShowStockModal] = useState(false);
   const [showCategoryModal, setShowCategoryModal] = useState(false);
 
-  const [newProduct, setNewProduct] = useState({ name: '', price: '', purchasePrice: '', category: '', barcode: '', min_stock: 1 });
+  const [newProduct, setNewProduct] = useState({ name: '', price: '', purchasePrice: '', category: '', barcode: '', min_stock: 1, quantity: '' });
   const [editingProduct, setEditingProduct] = useState(null);
   const [selectedProduct, setSelectedProduct] = useState(null);
 
@@ -140,9 +140,19 @@ const handleKeyDown = (event) => {
     if (!newProduct.name || !newProduct.price) return alert("Nome e prezzo sono obbligatori!");
 
     try {
-      await addProduct(newProduct);
+      const productToAdd = { ...newProduct };
+      const quantity = newProduct.quantity ? parseInt(newProduct.quantity) : 0;
+      
+      await addProduct(productToAdd);
+      
+      if (quantity > 0) {
+        const products = await fetchProducts();
+        const addedProduct = products[products.length - 1];
+        await addBatch(addedProduct.id, quantity, null, null, 'Quantità iniziale');
+      }
+      
       setShowAddModal(false);
-      setNewProduct({ name: '', price: '', purchasePrice: '', category: '', barcode: '', min_stock: 1 });
+      setNewProduct({ name: '', price: '', purchasePrice: '', category: '', barcode: '', min_stock: 1, quantity: '' });
       fetchProducts();
       alert("✅ Prodotto aggiunto con successo!");
     } catch (error) {
@@ -304,6 +314,7 @@ const handleKeyDown = (event) => {
                 {categories.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
               </select>
               <input type="text" placeholder="Codice a barre" value={newProduct.barcode} onChange={e => setNewProduct({...newProduct, barcode: e.target.value})} className="w-full border p-4 rounded-2xl" />
+              <input type="number" placeholder="Quantità iniziale (opzionale)" value={newProduct.quantity} onChange={e => setNewProduct({...newProduct, quantity: e.target.value})} className="w-full border p-4 rounded-2xl" />
               <button type="submit" className="w-full bg-green-600 text-white py-4 rounded-2xl font-semibold">Salva Prodotto</button>
             </form>
             <button onClick={() => setShowAddModal(false)} className="mt-4 w-full py-4 border rounded-2xl">Annulla</button>
