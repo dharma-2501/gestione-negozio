@@ -117,13 +117,11 @@ export default function Cassa() {
         discountFromPoints, 
         pointsEarned,
         appliedCoupon ? appliedCoupon.code : null,
-        discountFromManual   // ← passa lo sconto manuale
+        discountFromManual
       );
       
-      // === AGGIORNAMENTO IMMEDIATO DEI CLIENTI ===
-      await fetchCustomers();                    // ← questa era la riga mancante
+      await fetchCustomers();
       
-      // Reset tutto
       setUsePoints(false);
       setPointsToRedeem(0);
       setAppliedCoupon(null);
@@ -162,7 +160,6 @@ export default function Cassa() {
             placeholder="Codice Tessera Fedeltà (premi Invio)"
             value={loyaltySearch}
             onChange={e => {
-              // Converte automaticamente ' in - (problema pistola barcode)
               const normalized = e.target.value.replace(/'/g, '-');
               setLoyaltySearch(normalized);
             }}
@@ -181,11 +178,25 @@ export default function Cassa() {
           </select>
         </div>
 
-        <input type="text" placeholder="Cerca per nome o codice a barre..." value={search} onChange={e => setSearch(e.target.value)} className="w-full p-4 border rounded-2xl mb-6 text-lg" />
+        {/* CAMPO DI RICERCA - modificato il comportamento quando si aggiunge al carrello */}
+        <input 
+          type="text" 
+          placeholder="Cerca per nome o codice a barre..." 
+          value={search} 
+          onChange={e => setSearch(e.target.value)} 
+          className="w-full p-4 border rounded-2xl mb-6 text-lg" 
+        />
 
         <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
           {filteredProducts.map(p => (
-            <div key={p.id} onClick={() => addToCart(p)} className="bg-white border rounded-3xl p-6 cursor-pointer hover:shadow-xl transition">
+            <div 
+              key={p.id} 
+              onClick={() => {
+                addToCart(p);
+                setSearch('');           // ← Cancella la ricerca dopo aver aggiunto al carrello
+              }} 
+              className="bg-white border rounded-3xl p-6 cursor-pointer hover:shadow-xl transition"
+            >
               <h3 className="font-semibold">{p.name}</h3>
               {p.barcode && <p className="text-xs text-gray-500">📟 {p.barcode}</p>}
               <p className="text-3xl font-bold text-green-600 mt-2">€{p.price.toFixed(2)}</p>
@@ -288,7 +299,6 @@ export default function Cassa() {
             <span>€{finalTotal.toFixed(2)}</span>
           </div>
 
-          {/* DEBUG visibile */}
           <div className="text-xs text-gray-500 mt-3 text-center border-t pt-3">
             Netto dopo coupon: €{netAfterCoupon.toFixed(2)}<br/>
             Punti guadagnati questa vendita: <strong>{pointsEarned}</strong>
